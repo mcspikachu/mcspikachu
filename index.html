@@ -3,43 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Display</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <title>PDF Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #pdf-render {
+            border: 1px solid #ccc;
+            width: 100%;
+            height: 800px;
+        }
+    </style>
 </head>
 <body>
-    <h1>PDF Viewer</h1>
+    <h1>Select PDF to View</h1>
+    <select id="pdf-selector">
+        <option value="OS.pdf">OS PDF</option>
+        <option value="CN.pdf">CN PDF</option>
+    </select>
+    <br><br>
     <canvas id="pdf-render"></canvas>
-    <script>
-        const url = 'path/to/your/pdf.pdf'; // Path to your PDF file
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
         const pdfjsLib = window['pdfjs-dist/build/pdf'];
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        const loadingTask = pdfjsLib.getDocument(url);
-        loadingTask.promise.then(pdf => {
-            console.log('PDF loaded');
-            pdf.getPage(1).then(page => {
-                console.log('Page loaded');
-                const scale = 1.5;
-                const viewport = page.getViewport({ scale });
+        const canvas = document.getElementById('pdf-render');
+        const context = canvas.getContext('2d');
+        const pdfSelector = document.getElementById('pdf-selector');
 
-                const canvas = document.getElementById('pdf-render');
-                const context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+        function renderPDF(url) {
+            pdfjsLib.getDocument(url).promise.then(pdf => {
+                console.log('PDF loaded');
+                pdf.getPage(1).then(page => {
+                    console.log('Page loaded');
+                    const scale = 1.5;
+                    const viewport = page.getViewport({ scale });
 
-                const renderContext = {
-                    canvasContext: context,
-                    viewport: viewport
-                };
-                const renderTask = page.render(renderContext);
-                renderTask.promise.then(() => {
-                    console.log('Page rendered');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    const renderTask = page.render(renderContext);
+                    renderTask.promise.then(() => {
+                        console.log('Page rendered');
+                    });
                 });
+            }, reason => {
+                console.error(reason);
             });
-        }, reason => {
-            console.error(reason);
+        }
+
+        pdfSelector.addEventListener('change', (event) => {
+            const selectedPDF = event.target.value;
+            renderPDF(selectedPDF);
         });
+
+        // Render default PDF
+        renderPDF(pdfSelector.value);
     </script>
 </body>
 </html>
